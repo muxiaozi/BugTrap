@@ -27,6 +27,7 @@
 #include "Encoding.h"
 #include "MemStream.h"
 #include "VersionInfoString.h"
+#include <time.h>
 
 #ifdef _MANAGED
 #include "NetThunks.h"
@@ -812,6 +813,20 @@ static DWORD HTTPSendReport(PCTSTR pszSupportUrl, CTransferThreadParams* pTransf
 									CUTF8EncStream EncStream(&MemStream);
 									CHAR szTemp[16];
 
+									EncStream.WriteAscii(TEXT_SECTION_HEADER("callto"));
+									EncStream.WriteAscii("JFVideoDump");
+									EncStream.WriteAscii(SECTION_TRAILER);
+
+									EncStream.WriteAscii(TEXT_SECTION_HEADER("filename"));
+									TCHAR pcName[128]{};
+									DWORD pcNameLength = 128;
+									GetComputerName(pcName, &pcNameLength);
+									TCHAR filenameBuf[256]{};
+									_sntprintf(filenameBuf, _countof(filenameBuf), TEXT("%s_%s_%s_%lld.zip"),
+										g_szAppName, g_szAppVersion, pcName, time(NULL));
+									EncStream.WriteUTF8Bin(filenameBuf);
+									EncStream.WriteAscii(SECTION_TRAILER);
+
 									EncStream.WriteAscii(TEXT_SECTION_HEADER("protocolSignature"));
 									EncStream.WriteBytes((const BYTE*)&g_dwProtocolSignature, sizeof(g_dwProtocolSignature));
 									EncStream.WriteAscii(SECTION_TRAILER);
@@ -843,7 +858,7 @@ static DWORD HTTPSendReport(PCTSTR pszSupportUrl, CTransferThreadParams* pTransf
 									EncStream.WriteUTF8Bin(g_szNotificationEMail);
 									EncStream.WriteAscii(SECTION_TRAILER);
 
-									EncStream.WriteAscii(FILE_SECTION_HEADER("reportData", "report.dat"));
+									EncStream.WriteAscii(FILE_SECTION_HEADER("file", "report.dat"));
 
 									static const TCHAR szHeader[] = MESSAGE_HEADER;
 									const DWORD dwHeaderLength = countof(szHeader) - 1;
